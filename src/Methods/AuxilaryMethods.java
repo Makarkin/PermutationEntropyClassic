@@ -3,6 +3,7 @@ package Methods;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class AuxilaryMethods {
 
@@ -18,13 +19,14 @@ public class AuxilaryMethods {
         }
     }
 
-    public static void addPermutation(ArrayList<String> patternCount, String permutation) {
-        if (patternCount.size() == 0) {
-            patternCount.add(permutation);
+    public static void addPermutation(HashMap<String, Integer> patternCount, String permutation) {
+        int temp;
+        if (patternCount.size() == 0 || !patternCount.containsKey(permutation)) {
+            patternCount.put(permutation, 1);
         } else {
-            if (!patternCount.contains(permutation)) {
-                patternCount.add(permutation);
-            }
+            temp = patternCount.get(permutation);
+            temp++;
+            patternCount.put(permutation, temp);
         }
     }
 }

@@ -5,9 +5,38 @@ import java.util.*;
 
 public class ReadWrite {
 
-    public static void write(String filePath, HashMap<Double, Integer> resmap) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, false))) {
-            for (Map.Entry e: resmap.entrySet()) {
+    private LinkedHashMap<Double, Integer> resmap = new LinkedHashMap<>();
+
+    private HashMap<String, Integer> patternCount = new HashMap<>();
+
+    public LinkedHashMap<Double, Integer> getResmap() {
+        return resmap;
+    }
+
+    public HashMap<String, Integer> getPatternCount() {
+        return patternCount;
+    }
+
+    public void writePermutationEntropy(String filePathPermutationEntropy) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePathPermutationEntropy, false))) {
+            int sumOfPattern = 0;
+            int probability = 0;
+            double permutationEntropy = 0;
+            for (int i : patternCount.values()) {
+                sumOfPattern += i;
+            }
+
+            for (int i : patternCount.values()) {
+                permutationEntropy += (i / sumOfPattern) * Math.log((i / sumOfPattern));
+            }
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public void writePatternCount(String filePathPatternCount) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePathPatternCount, false))) {
+            for (Map.Entry e : resmap.entrySet()) {
                 writer.write(e.getKey() + " " + e.getValue() + "\r\n");
             }
         } catch (IOException ex) {
@@ -15,12 +44,12 @@ public class ReadWrite {
         }
     }
 
-    public static LinkedHashMap<Double, Integer> read(String filePath, int dimension) {
-        ArrayList<String> patternCount = new ArrayList<>();
+    public LinkedHashMap<Double, Integer> read(String filePath, int dimension) {
+
         ArrayList<ValueAndIndex> valueAndIndices = new ArrayList<>();
-        ArrayList<ValueAndIndex> valueAndIndicesClone = new ArrayList<>();
+        ArrayList<ValueAndIndex> valueAndIndicesClone;
         ValueAndIndexComparator comparator = new ValueAndIndexComparator();
-        LinkedHashMap<Double, Integer> resmap = new LinkedHashMap<>();
+
         int i = 0;
         double t;
         int n = 21;
