@@ -11,8 +11,8 @@ public class Main {
         System.out.println("Введите вложенную размерность");
         int dimension = Integer.valueOf(sc.nextLine());
         HashMap<Double, Integer> map = readWrite.read(filePath, dimension);
-        System.out.println("Введите путь до файла с результирующими данными");
-        String resFilePath = sc.nextLine();
-        readWrite.writePatternCount(resFilePath);
+        //System.out.println("Введите путь до файла с результирующими данными");
+        //String resFilePath = sc.nextLine();
+        //readWrite.writePatternCount(resFilePath);
     }
 }
