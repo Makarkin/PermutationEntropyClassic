@@ -1,5 +1,7 @@
 package Methods;
 
+import Methods.ValueAndIndex.ValueAndIndex;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,13 +15,7 @@ public class AuxilaryMethods {
         }
     }
 
-    public static void indexDecrement(ArrayList<ValueAndIndex> valueAndIndices) {
-        for (int m = 0; m < valueAndIndices.size(); m++) {
-            valueAndIndices.get(m).index--;
-        }
-    }
-
-    public static void addPermutation(HashMap<String, Integer> patternCount, String permutation) {
+    public static void addPattern(HashMap<String, Integer> patternCount, String permutation) {
         int temp;
         if (patternCount.size() == 0 || !patternCount.containsKey(permutation)) {
             patternCount.put(permutation, 1);

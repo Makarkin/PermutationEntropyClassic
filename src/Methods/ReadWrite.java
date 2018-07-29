@@ -1,116 +1,119 @@
 package Methods;
 
+import Methods.ValueAndIndex.ValueAndIndex;
+
 import java.io.*;
 import java.util.*;
 
 public class ReadWrite {
 
-    private LinkedHashMap<Double, Integer> resmap = new LinkedHashMap<>();
+    private double t;
 
-    private HashMap<String, Integer> patternCount = new HashMap<>();
+    private LinkedHashMap<Double, Integer> timeVsNumberOfPattern = new LinkedHashMap<>();
 
-    private LinkedHashMap<Double, Integer> getResmap() {
-        return resmap;
-    }
-
-    private HashMap<String, Integer> getPatternCount() {
-        return patternCount;
-    }
-
-    private ArrayList<Double> valuesForWeight = new ArrayList<>();
+    private HashMap<String, Integer> patternVsPatternCount = new HashMap<>();
 
     private ArrayList<Double> weightCoefficients = new ArrayList<>();
 
-    public void calculateWeight(ArrayList<Double> values, int dimension) {
-        ArrayList<Double> averageVectors = new ArrayList<>();
-        Double averageVectorValue = 0.0;
-        Double weightCoefficientValue = 0.0;
-        int counter = 0;
+    private ArrayList<String> patternSequence = new ArrayList<>();
+
+    private void readAndAddValue(String line, ArrayList<Double> values) throws IOException {
+        String[] timeAndValue = line.split(",");
+        t = Double.valueOf(timeAndValue[0]);
+        double value = Double.valueOf(timeAndValue[1]);
+        values.add(value);
+    }
+
+    private void calculateCoefficient(ArrayList<Double> values, int dimension) {
+        int counter = 1;
+        double averageVectorValue = 0.0;
+        double weightCoefficientValue = 0.0;
         for (int i = 0; i <= values.size() - dimension - 1; i++) {
-            for (int j = 1 ; j <= dimension; j++) {
-                averageVectorValue += (1/dimension) * values.get(i + j + 1);
-            }
 
-            averageVectors.add(averageVectorValue);
-            averageVectorValue = 0.0;
-        }
-
-        for (int i = 0; i <= values.size() - dimension + 1; i++) {
-            for (int j = 1 ; j <= dimension; j++) {
-                weightCoefficientValue += (1/dimension) * Math.pow((values.get(i) -  averageVectors.get(counter)), 2);
+            while (counter <= dimension) {
+                averageVectorValue += (1 / (double) dimension) * values.get(i + counter);
                 counter++;
             }
 
+            counter = 0;
+            while (counter <= dimension) {
+                weightCoefficientValue += (1 / (double) dimension) * Math.pow((values.get(i) - averageVectorValue), 2);
+                counter++;
+            }
+
+            counter = 0;
             weightCoefficients.add(weightCoefficientValue);
-            weightCoefficientValue = 0.0;
         }
     }
 
-    public void writePermutationEntropy(String filePathPermutationEntropy) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePathPermutationEntropy, false))) {
+    private void addPatternInCollections(ArrayList<Double> values, String pattern, int dimension) {
+        AuxilaryMethods.addPattern(patternVsPatternCount, pattern);
+        patternSequence.add(pattern);
+        calculateCoefficient(values, dimension);
+    }
+
+    private void writeResult(String filePathForResult1, String filePathForResult2) {
+        try (BufferedWriter writer1 = new BufferedWriter(new FileWriter(filePathForResult1, false));
+             BufferedWriter writer2 = new BufferedWriter(new FileWriter(filePathForResult2, false))) {
+
             double sumOfPattern = 0;
             double permutationEntropy = 0;
-            for (int i : patternCount.values()) {
-                sumOfPattern += i;
+            double probability;
+            for (int patternCount : patternVsPatternCount.values()) {
+                sumOfPattern += patternCount;
             }
 
-            for (int i : patternCount.values()) {
-                permutationEntropy -= (i / sumOfPattern) * Math.log((i / sumOfPattern));
+            for (int i = 0; i < patternSequence.size(); i++) {
+                probability = patternVsPatternCount.get(patternSequence.get(i)) / sumOfPattern;
+                permutationEntropy -= (probability) * Math.log((probability));
+                writer1.write(i + " " + permutationEntropy + "\r\n");
+                writer2.write(i + " " + permutationEntropy * weightCoefficients.get(i) + "\r\n");
+                permutationEntropy = 0;
             }
 
-            System.out.println(permutationEntropy);
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
     }
 
-    public void writePatternCount(String filePathPatternCount) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePathPatternCount, false))) {
-            for (Map.Entry e : resmap.entrySet()) {
-                writer.write(e.getKey() + " " + e.getValue() + "\r\n");
+    public void calculateAll(int dimension, String filePathPermutationEntropy, String filePathForResult1,
+                              String filePathForResult2) throws IOException {
+        ArrayList<Double> values = new ArrayList<>();
+        String line = "";
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePathPermutationEntropy))) {
+
+            AuxilaryMethods.readFirst(reader, 21);
+
+            for (int i = 0; i <= dimension; i++) {
+                line = reader.readLine();
+                readAndAddValue(line, values);
             }
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
-    }
 
-    public LinkedHashMap<Double, Integer> read(String filePath, int dimension) {
-        ArrayList<ValueAndIndex> valueAndIndices = new ArrayList<>();
-        ArrayList<ValueAndIndex> valueAndIndicesClone;
-        ValueAndIndexComparator comparator = new ValueAndIndexComparator();
-        int i = 0;
-        double t;
-        double value;
-        int n = 21;
-        String[] timeAndValue;
+            ArrayList<ValueAndIndex> source = ValueAndIndex.createValueAndIndices(values);
+            String pattern = "";
+            for (int i = 0; i < source.size(); i++) {
+                pattern += source.get(i).getPatternIndex();
+            }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            AuxilaryMethods.readFirst(reader, n);
-            String line = reader.readLine();
-            do {
-                timeAndValue = line.split(",");
-                t = Double.valueOf(timeAndValue[0]);
-                value = Double.valueOf(timeAndValue[1]);
-                //TODO mean value like in articles
-                valuesForWeight.add(value);
-                valueAndIndices.add(new ValueAndIndex(value, i));
-                if (i == dimension - 1) {
-                    valueAndIndicesClone = (ArrayList<ValueAndIndex>) valueAndIndices.clone();
-                    AuxilaryMethods.addPermutation(patternCount, Permutation.getPermutation(valueAndIndicesClone, comparator));
-                    valueAndIndices.remove(0);
-                    AuxilaryMethods.indexDecrement(valueAndIndices);
-                    writePermutationEntropy("r");
-                    i--;
+            addPatternInCollections(values, pattern, dimension);
+
+            boolean b = true;
+            while (b) {
+                values.remove(0);
+                line = reader.readLine();
+                if (line == null) break;
+                readAndAddValue(line, values);
+                source = ValueAndIndex.createValueAndIndices(values);
+                pattern = "";
+                for (int i = 0; i < source.size(); i++) {
+                    pattern += source.get(i).getPatternIndex();
                 }
 
-                i++;
-                resmap.put(t, patternCount.size());
+                addPatternInCollections(values, pattern, dimension);
             }
-            while ((line = reader.readLine()) != null);
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
 
-        return resmap;
+            writeResult(filePathForResult1, filePathForResult2);
+        }
     }
 }
